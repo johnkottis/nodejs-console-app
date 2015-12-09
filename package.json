@@ -1,0 +1,17 @@
+{  
+    "name":"WordCount",
+    "version":"0.0.1",
+    "description":"It reads a file as a command argument and process the words contained in that file",
+    "dependencies":{  
+        "fs":"*",
+        "recursive-readdir":"*",
+        "link":"*",
+        "commander":"*"
+    },
+    "author":"John Kottis",
+    "preferGlobal":true,
+    "bin":{  
+        "wordcount":"server.js"
+    },
+    "license":"MIT"
+}
