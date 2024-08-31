@@ -1,7 +1,7 @@
-#! /usr/bin/env node
+#!/usr/bin/env node
 
-var txtController = require('./controllers/txtController');
-var program = require('commander');
+const txtController = require('./controllers/txtController');
+const program = require('commander');
 
 program
     .option('-b, --basic', 'Show basic data')
@@ -9,7 +9,15 @@ program
     .option('-x, --extended', 'Show extended data')
     .parse(process.argv);
 
-if (program.basic) txtController.wordCount();
-else if (program.frequencies) txtController.wordCount();
-else if (program.extended) txtController.wordCount();
-else console.log("Please type a valid command or input");
+if (program.args.length > 0) {
+    (async () => {
+        try {
+            console.log('Processing file:', program.args[0]);
+            await txtController.wordCount(program.args[0]);
+        } catch (err) {
+            console.error("Error executing command:", err);
+        }
+    })();
+} else {
+    console.log("Please type a valid command or input");
+}
