@@ -1,17 +1,15 @@
-{  
-    "name":"WordCount",
-    "version":"0.0.1",
-    "description":"It reads a file as a command argument and process the words contained in that file",
-    "dependencies":{  
-        "fs":"*",
-        "recursive-readdir":"*",
-        "link":"*",
-        "commander":"*"
+{
+    "name": "WordCount",
+    "version": "0.0.2",
+    "description": "A command-line tool to read and process words from text files or directories.",
+    "dependencies": {
+        "commander": "^10.0.0",
+        "recursive-readdir": "^2.2.2"
     },
-    "author":"John Kottis",
-    "preferGlobal":true,
-    "bin":{  
-        "wordcount":"server.js"
+    "author": "John Kottis",
+    "preferGlobal": true,
+    "bin": {
+        "wordcount": "./server.js"
     },
-    "license":"MIT"
+    "license": "MIT"
 }
