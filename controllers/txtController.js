@@ -1,199 +1,99 @@
 /**
  * WordCount Controller
- * Version: 0.0.1
+ * Version: 0.0.2
  * Author: John Kottis
  */
-var fs = require('fs'),
-    recursive = require('recursive-readdir'),
-    inputTextOrDir = process.argv.slice(3),
-    infoLevel = process.argv.slice(2)[0],
 
-    /**
-     * Converts an object to a string with property values pairs
-     * @param {Object} inputObject is the input object.
-     * @return {String} outputString with property values pairs .
-     */
-    pritifyObject = function(inputObject) {
-        var outputString = '';
-        for (var inputPair in inputObject) {
-            outputString += inputPair + ': ' + inputObject[inputPair] + '\n';
-        }
-        return outputString;
-    },
-
-    /**
-     * Checks if the input is a file or a directory
-     * @param {String} userInput is the input directory of file.
-     * @return {Boolean} true if it is a directory, false if it is a file.
-     */
-    userInputType = function(userInput) {
-        return fs.lstatSync(userInput).isDirectory();
-    },
-
-    /**
-     * Counts number of lines
-     * @param {String} txtFile is the content text.
-     * @return {Number} of lines.
-     */
-    counterLines = function(txtFile) {
-        return txtFile.toString().split("\n").length;
-    },
-
-    /**
-     * Counts number of words
-     * @param {String} txtFile is the content text.
-     * @return {Object} with total number of words and pairs words/ freequency.
-     */
-    counterWords = function(txtFile) {
-        var dictionary = {},
-            words = txtFile
-            .replace(/[^\w\s]/gi, '')
-            .toLowerCase()
-            .split(" ");
-
-        words.forEach(function(word) {
-            if (!(dictionary.hasOwnProperty(word))) {
-                dictionary[word] = 0;
-            }
-            dictionary[word]++;
-        });
-
-        return {
-            sum: words.length,
-            dictionary: dictionary
-        };
-    },
-
-    /**
-     * Counts number of characters
-     * @param {String} txtFile is the content text.
-     * @return {Number} of characters.
-     */
-    counterChars = function(txtFile) {
-        return txtFile.length;
-    },
-
-    /**
-     * Creates user friendly message
-     * @param {String} fileName is the file name.
-     * @param {String} fileCharsSum is the sum of characters.
-     * @param {String} fileWordsSum is the sum of words.
-     * @param {String} fileDictionary is the pairs words/ freequency.
-     * @param {String} fileLinesSum is the sum of lines.
-     * @return {Object} of user frinedly messages.
-     */
-    messageGenerator = function(fileName, fileCharsSum, fileWordsSum, fileDictionary, fileLinesSum) {
-        return {
-            messageTextFile: "Report for file: " + fileName,
-            messageCharsCount: "Total number of characters is " + fileCharsSum,
-            messageWordsCount: "Total number of words is " + fileWordsSum,
-            messageLinesCount: "Total number of lines: " + fileLinesSum,
-            messageDictionary: "Detail report: " + pritifyObject(fileDictionary)
-        }
-    },
-
-    /**
-     * Converts an object to a string
-     * @param {String} fileName is the file name.
-     * @param {String} fileContent is the log file message.
-     */
-    writerLogs = function(fileName, fileContent) {
-        var logFileName = './wordCountLogs/' + Math.floor(Date.now() / 1000) + fileName.split("\\").pop();
-        fs.writeFile(logFileName, fileContent, function(err) {
-            if (err) {
-                return console.log(err);
-            }
-            console.log(logFileName + " was saved!");
-        });
-    },
-
-    /**
-     * Handles text file/ directory actions
-     * Provides different information based on user's request
-     * @param {String} fileName is the file name.
-     * @param {String} handledText is the parsed text.
-     */
-    textFileHandler = function(fileName, handledText) {
-        var resultWordsCount = counterWords(handledText).sum,
-            resultCharsCount = counterChars(handledText),
-            resultDictionary = counterWords(handledText).dictionary,
-            resultLinesCount = counterLines(handledText),
-            userFriendlyMsg,
-            userReport = messageGenerator(fileName, resultCharsCount, resultWordsCount, resultDictionary, resultLinesCount);
-
-        switch (infoLevel) {
-            case "--basic":
-                userFriendlyMsg = userReport.messageWordsCount;
-                break;
-
-            case "--frequencies":
-                userFriendlyMsg = userReport.messageDictionary;
-                break;
-
-            default:
-                userFriendlyMsg = userReport.messageTextFile + "\n" +
-                    userReport.messageWordsCount + "\n" +
-                    userReport.messageCharsCount + "\n" +
-                    userReport.messageLinesCount + "\n" +
-                    userReport.messageDictionary;
-        }
-
-        // Prints a user friendly message to the console
-        console.log(userFriendlyMsg);
-
-        // Creates the log file in the logs directory
-        writerLogs(fileName, userFriendlyMsg);
-
-    };
+const fs = require('fs').promises;
+const recursive = require('recursive-readdir');
 
 /**
- * Reads files and calls textFileHandler within text files loops
- * @param {String} textFile is the file name.
+ * Converts an object to a string with property-value pairs.
+ * @param {Object} inputObject - The input object.
+ * @return {String} outputString - The string representation of the object.
  */
-function processTextFile(textFile) {
-    // Check if file is a text document
-    if (textFile.split(".").pop() === "txt") {
-        fs.readFile(textFile, 'utf8', function(err, parsedText) {
-            if (err) {
-                return console.log(err);
-            }
-            textFileHandler(textFile, parsedText);
-        });
-    } else return console.log("Input is not a text file!");
-}
-
+const prettifyObject = (inputObject) => {
+    return Object.entries(inputObject)
+        .map(([key, value]) => `${key}: ${value}`)
+        .join('\n');
+};
 
 /**
- * Reads files and calls textFileHandler within text files loops
- * @param {String} textFiles is the file path or the directory.
+ * Checks if the input is a directory or a file.
+ * @param {String} userInput - The input directory or file path.
+ * @return {Boolean} - True if it is a directory, false if it is a file.
  */
-module.exports.wordCount = function(textFiles) {
+const userInputType = async (userInput) => {
+    const stats = await fs.lstat(userInput);
+    return stats.isDirectory();
+};
 
-    // Case: Input is a directory
-    if (userInputType(inputTextOrDir[0])) {
-        // List all text files in directory and in subdirectories
-        recursive(inputTextOrDir[0], function(err, allFiles) {
-            if (err) {
-                return console.log(err);
-            }
-            // Files is an array of filename 
-            for (var fileInDir = 0; fileInDir < allFiles.length; fileInDir++) {
-                processTextFile(allFiles[fileInDir]);
-            }
-        });
+/**
+ * Counts the number of lines in a text file.
+ * @param {String} text - The content of the text file.
+ * @return {Number} - The number of lines.
+ */
+const countLines = (text) => text.split("\n").length;
+
+/**
+ * Counts the number of words in a text file.
+ * @param {String} text - The content of the text file.
+ * @return {Number} - The number of words.
+ */
+const countWords = (text) => text.split(/\s+/).filter(word => word.length > 0).length;
+
+/**
+ * Handles text processing based on the input options.
+ * @param {String} filePath - The path of the text file.
+ * @param {String} content - The content of the text file.
+ */
+const textFileHandler = (filePath, content) => {
+    const wordCount = countWords(content);
+    const lineCount = countLines(content);
+
+    console.log(`File: ${filePath}`);
+    console.log(`Lines: ${lineCount}`);
+    console.log(`Words: ${wordCount}`);
+};
+
+/**
+ * Processes a text file, reading its content and handling it.
+ * @param {String} filePath - The path of the text file.
+ */
+const processTextFile = async (filePath) => {
+    if (filePath.endsWith('.txt')) {
+        try {
+            const content = await fs.readFile(filePath, 'utf8');
+            textFileHandler(filePath, content);
+        } catch (err) {
+            console.error(`Error reading file ${filePath}:`, err);
+        }
+    } else {
+        console.log("Input is not a text file!");
     }
+};
 
-    // Case: Input is a file
-    else {
-        // Check if given file is a text document
-        if (inputTextOrDir[0].split(".").pop() === "txt") {
-            fs.readFile(inputTextOrDir[0], 'utf8', function(err, parsedText) {
-                if (err) {
-                    return console.log(err);
-                }
-                textFileHandler(inputTextOrDir[0], parsedText);
-            });
-        } else return console.log("Input is not a text file!");
-
+/**
+ * Reads files and calls textFileHandler for each text file found.
+ * @param {String} inputPath - The file or directory path.
+ */
+const wordCount = async (inputPath) => {
+    try {
+        if (await userInputType(inputPath)) {
+            // Input is a directory
+            const allFiles = await recursive(inputPath);
+            for (const file of allFiles) {
+                await processTextFile(file);
+            }
+        } else {
+            // Input is a file
+            await processTextFile(inputPath);
+        }
+    } catch (err) {
+        console.error(`Error processing input path ${inputPath}:`, err);
     }
+};
+
+module.exports = {
+    wordCount,
 };
